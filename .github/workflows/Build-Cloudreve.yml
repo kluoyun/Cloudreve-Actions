@@ -70,7 +70,9 @@ jobs:
         git clone --recurse-submodules https://github.com/cloudreve/Cloudreve.git
         ln -sf /workdir/Cloudreve $GITHUB_WORKSPACE/Cloudreve
         cd Cloudreve/assets
+        yarn upgrade
         # 安装依赖
+        CI=false
         yarn install
         # 开始构建
         yarn run build
