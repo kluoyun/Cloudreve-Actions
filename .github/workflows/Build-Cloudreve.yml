@@ -1,0 +1,115 @@
+name: Build Cloudreve
+
+on:
+  repository_dispatch:
+  release:
+    types: published
+  push:
+    branches:
+      - master
+    paths:
+      - 'config.json'
+#  schedule:
+#    - cron: 0 8 * * 5
+  watch:
+    types: started
+
+env:
+  REPO_URL: https://github.com/cloudreve/Cloudreve
+  REPO_BRANCH: master
+  CONFIG_FILE: config.json
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
+  UPLOAD_BIN_DIR: true
+  SSH_ACTIONS: false
+  Run_OS: win
+  # win,linux,mac
+  OS_j: arm64
+  # x64,x86,arm64,arm
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: 初始化环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        #sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq update
+        #sudo -E apt-get -qqy remove nodejs
+        #sudo -E apt-get -qqy remove yarnpkg
+        sudo -E apt-get -qqy remove cmdtest
+        sudo -E apt-get -qq autoremove --purge
+        
+        sudo -E apt-get -qqy install golang 
+        sudo -E apt-get -qqy install nodejs
+        alias nodejs=node
+        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+        echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+        
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+        
+    - name: SSH connection to Actions
+      uses: kluoyun/debugger-action@master
+      if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
+      
+    - name: 构建静态资源
+      working-directory: /workdir
+      run: |
+        df -hT $PWD
+        git clone --recurse-submodules https://github.com/cloudreve/Cloudreve.git
+        ln -sf /workdir/Cloudreve $GITHUB_WORKSPACE/Cloudreve
+        cd assets
+        # 安装依赖
+        yarn install
+        # 开始构建
+        yarn run build
+        # 回到项目主目录
+        cd ../
+        # 安装 statik, 用于嵌入静态资源
+        go get github.com/rakyll/statik
+        export PATH=$PATH:$(go env GOPATH)/bin
+        # 开始嵌入
+        statik -src=assets/build/  -include=*.html,*.js,*.json,*.css,*.png,*.svg,*.ico,*.ttf -f
+        
+    - name: 构建Cloudreve
+      run: |
+        # 获得当前版本号、Commit
+        export COMMIT_SHA=$(git rev-parse --short HEAD)
+        export VERSION=$(git describe --tags)
+        # 开始编译
+        cd Cloudreve
+        go build -a -o cloudreve -ldflags " -X 'github.com/HFO4/cloudreve/pkg/conf.BackendVersion=$VERSION' -X 'github.com/HFO4/cloudreve/pkg/conf.LastCommit=$COMMIT_SHA'"
+
+    - name: 检查磁盘使用情况
+      if: (!cancelled())
+      run: df -hT
+
+    - name: 上传已构建程序
+      uses: actions/upload-artifact@master
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: Cloudreve${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        path: Cloudreve/cloudreve
+
+    - name: 组织文件
+      id: organize
+      #if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      run: |
+        #cd openwrt/bin/targets/*/*
+        #rm -rf packages
+        #echo "::set-env name=FIRMWARE::$PWD"
+        #echo "::set-output name=status::success"
+
+
+ 
