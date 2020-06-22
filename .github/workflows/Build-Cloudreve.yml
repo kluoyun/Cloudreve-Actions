@@ -34,7 +34,7 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
-    - name: Checkout
+    - name: 创建
       uses: actions/checkout@master
 
     - name: 初始化环境
@@ -66,7 +66,7 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
         
-    - name: SSH connection to Actions
+    - name: 启动SSH服务
       uses: kluoyun/debugger-action@master
       if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
       
@@ -99,14 +99,20 @@ jobs:
         # 开始编译
         cd Cloudreve
         go build -a -o cloudreve -ldflags " -X 'github.com/HFO4/cloudreve/pkg/conf.BackendVersion=$VERSION' -X 'github.com/HFO4/cloudreve/pkg/conf.LastCommit=$COMMIT_SHA'"
-
+    
+    - name: 测试运行程序
+      run: |
+        cd Cloudreve
+        sudo chmod 777 cloudreve
+        ./cloudreve
+      
     - name: 检查磁盘使用情况
       if: (!cancelled())
       run: df -hT
 
     - name: 上传已构建程序
       uses: actions/upload-artifact@master
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      #if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: Cloudreve${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: Cloudreve/cloudreve
