@@ -45,10 +45,17 @@ jobs:
         sudo -E apt-get -qq update
         #sudo -E apt-get -qqy remove nodejs
         #sudo -E apt-get -qqy remove yarnpkg
+        sudo -E apt-get -qqy remove golang
         sudo -E apt-get -qqy remove cmdtest
         sudo -E apt-get -qq autoremove --purge
         
-        sudo -E apt-get -qqy install golang 
+        #sudo -E apt-get -qqy install golang 
+        sudo wget https://dl.google.com/go/go1.14.4.linux-amd64.tar.gz
+        sudo tar -C /usr/local -zxvf go1.14.4.linux-amd64.tar.gz
+        sudo sed -i '$aexport GOROOT=/usr/local/go' /etc/profile
+        sudo sed -i '$aexport PATH=$PATH:$GOROOT/bin' /etc/profile
+        source /etc/profile
+        
         sudo -E apt-get -qqy install nodejs
         alias nodejs=node
         curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
