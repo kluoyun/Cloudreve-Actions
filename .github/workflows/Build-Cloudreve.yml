@@ -21,7 +21,7 @@ env:
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: true
-  SSH_ACTIONS: true
+  SSH_ACTIONS: false
   Run_OS: win
   # win,linux,mac
   OS_j: arm64
@@ -100,11 +100,11 @@ jobs:
         cd Cloudreve
         go build -a -o cloudreve -ldflags " -X 'github.com/HFO4/cloudreve/pkg/conf.BackendVersion=$VERSION' -X 'github.com/HFO4/cloudreve/pkg/conf.LastCommit=$COMMIT_SHA'"
     
-    - name: 测试运行程序
-      run: |
-        cd Cloudreve
-        sudo chmod 777 cloudreve
-        ./cloudreve
+    #- name: 测试运行程序
+    #  run: |
+    #    cd Cloudreve
+    #    sudo chmod 777 cloudreve
+    #    ./cloudreve
       
     - name: 检查磁盘使用情况
       if: (!cancelled())
