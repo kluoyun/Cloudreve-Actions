@@ -118,8 +118,8 @@ jobs:
       uses: actions/upload-artifact@master
       #if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
-        name: Cloudreve${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: Cloudreve/cloudreve
+        name: cloudreve
+        path: Cloudreve/
 
     - name: 组织文件
       id: organize
